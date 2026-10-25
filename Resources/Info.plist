@@ -7,8 +7,8 @@
     <key>CFBundleDisplayName</key><string>Bubblecast</string>
     <key>CFBundleExecutable</key><string>Bubblecast</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>1.0.0</string>
-    <key>CFBundleVersion</key><string>1</string>
+    <key>CFBundleShortVersionString</key><string>1.2.0</string>
+    <key>CFBundleVersion</key><string>3</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.productivity</string>
     <key>NSHumanReadableCopyright</key><string>© 2026 Mehedi Hasan Sarkar. MIT License.</string>

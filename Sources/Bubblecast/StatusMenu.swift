@@ -5,17 +5,22 @@ final class StatusMenu: NSObject {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let showBar: () -> Void
     private let showPermissions: () -> Void
+    private let showLibrary: () -> Void
     private let onError: (Error) -> Void
 
-    init(showBar: @escaping () -> Void, showPermissions: @escaping () -> Void, onError: @escaping (Error) -> Void) {
+    init(showBar: @escaping () -> Void, showPermissions: @escaping () -> Void, showLibrary: @escaping () -> Void,
+         onError: @escaping (Error) -> Void) {
         self.showBar = showBar
         self.showPermissions = showPermissions
+        self.showLibrary = showLibrary
         self.onError = onError
         super.init()
         let menu = NSMenu()
         for (title, action) in [("Show bar", #selector(show)),
+                                ("Library…", #selector(library)),
                                 ("Permissions…", #selector(permissions)),
                                 ("Open recordings folder", #selector(openFolder)),
+                                ("Save recordings to…", #selector(chooseFolder)),
                                 ("Quit", #selector(quit))] {
             let entry = NSMenuItem(title: title, action: action, keyEquivalent: "")
             entry.target = self
@@ -53,7 +58,22 @@ final class StatusMenu: NSObject {
 
     @objc private func show() { showBar() }
     @objc private func permissions() { showPermissions() }
+    @objc private func library() { showLibrary() }
     @objc private func quit() { NSApplication.shared.terminate(nil) }
+
+    // Choosing a Google Drive, iCloud Drive or Dropbox folder makes their desktop app upload new recordings.
+    @objc private func chooseFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.prompt = "Save Here"
+        panel.message = "Choose where Bubblecast saves recordings. Pick a folder inside Google Drive to upload them automatically."
+        panel.directoryURL = RecordingPaths.root
+        NSApp.activate()
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        RecordingPaths.setRoot(url.standardizedFileURL == RecordingPaths.defaultRoot.standardizedFileURL ? nil : url)
+    }
 
     @objc private func openFolder() {
         do {

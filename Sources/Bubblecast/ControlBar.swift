@@ -22,7 +22,8 @@ final class ControlBar {
     private var subscription: AnyCancellable?
 
     init(state: BarState, devices: Devices, record: @escaping () -> Void,
-         camera: @escaping (String?) -> Void, settings: @escaping () -> Void, fullScreen: @escaping () -> Void, close: @escaping () -> Void) {
+         camera: @escaping (String?) -> Void, settings: @escaping () -> Void, fullScreen: @escaping () -> Void, library: @escaping () -> Void,
+         close: @escaping () -> Void) {
         window = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 716, height: 44),
                          styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         window.level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 2)
@@ -35,10 +36,10 @@ final class ControlBar {
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: BarView(
             state: state, devices: devices, record: record, camera: camera, settings: settings, fullScreen: fullScreen,
-            close: close))
+            library: library, close: close))
         subscription = state.$recording.sink { [weak self] recording in
             guard let self else { return }
-            let width: CGFloat = recording ? 260 : 716
+            let width: CGFloat = recording ? 260 : 746
             let centre = window.frame.midX
             window.setFrame(NSRect(x: centre - width / 2, y: window.frame.minY, width: width, height: 44), display: true)
         }
@@ -63,6 +64,7 @@ private struct BarView: View {
     let camera: (String?) -> Void
     let settings: () -> Void
     let fullScreen: () -> Void
+    let library: () -> Void
     let close: () -> Void
 
     var body: some View {
@@ -117,12 +119,14 @@ private struct BarView: View {
                     .fontWeight(.semibold).padding(.horizontal, 12).frame(height: 30)
                     .background(.red, in: Capsule())
                     .disabled(state.busy)
+                Button(action: library) { Image(systemName: "film.stack") }
+                    .help("Library: watch, rename, upload and share recordings")
                 closeButton
             }
         }
         .menuStyle(.borderlessButton).buttonStyle(.plain)
         .font(.system(size: 12)).foregroundStyle(.white)
-        .padding(.horizontal, 16).frame(width: state.recording ? 260 : 716, height: 44)
+        .padding(.horizontal, 16).frame(width: state.recording ? 260 : 746, height: 44)
         .background { Capsule().fill(.ultraThinMaterial).gesture(WindowDragGesture()) }
         .overlay(Capsule().strokeBorder(.white.opacity(0.12)))
         .environment(\.colorScheme, .dark)

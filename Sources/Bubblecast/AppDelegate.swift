@@ -24,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotKeys: HotKeys?
     private var cameraOnBeforeClose = false
     private let permissions = PermissionsWindow()
+    private let libraryWindow = LibraryWindow()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         bubble = CameraBubble(renderer: camera.renderer, style: style)
@@ -34,6 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                              fullScreen: { [weak self] in
                                  guard let self else { return }; setFullScreen(!state.fullScreen)
                              },
+                             library: { [weak self] in self?.libraryWindow.show() },
                              close: { [weak self] in self?.closeBar() })
         devices.onChange = { [weak self] in self?.devicesChanged() }
         devicesChanged()
@@ -42,7 +44,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         recorder.onFinished = { [weak self] url in
             guard let self else { return }
             resetRecording()
-            NSWorkspace.shared.activateFileViewerSelecting([url])
+            libraryWindow.library.recordingFinished(url)
+            if !quitting { libraryWindow.show() }
             finishQuitting()
         }
         recorder.onError = { [weak self] error in
@@ -75,6 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         registerShortcuts()
         statusMenu = StatusMenu(showBar: { [weak self] in self?.openBar() },
                                 showPermissions: { [weak self] in self?.permissions.show() },
+                                showLibrary: { [weak self] in self?.libraryWindow.show() },
                                 onError: { [weak self] in self?.showError($0) })
         permissions.onDone = { [weak self] in self?.openBar() }
         permissions.onError = { [weak self] in self?.showError($0) }

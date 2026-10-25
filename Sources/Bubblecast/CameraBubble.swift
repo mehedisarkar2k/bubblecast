@@ -21,8 +21,8 @@ final class CameraBubble {
 
     init(renderer: CameraRenderer, style: BubbleStyle) {
         self.style = style
-        let screen = Self.mainScreen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1000, height: 800)
-        bubbleFrame = NSRect(x: screen.minX + 24, y: screen.minY + 24, width: 240, height: 240)
+        let size = style.shape.dimensions(for: style.size)
+        bubbleFrame = Self.mainScreen.map { Self.savedFrame(size, on: $0) } ?? NSRect(origin: .zero, size: size)
         panel = NSPanel(contentRect: bubbleFrame, styleMask: [.borderless, .nonactivatingPanel],
                         backing: .buffered, defer: false)
         panel.isOpaque = false
@@ -45,27 +45,45 @@ final class CameraBubble {
         frame.origin.y += delta.height
         bubbleFrame = constrained(frame, to: screen)
         panel.setFrame(bubbleFrame, display: true)
+        Self.savePosition(of: bubbleFrame, on: screen)
     }
 
     func move(to screen: NSScreen) {
-        if self.screen?.displayID != screen.displayID {
-            bubbleFrame.origin = NSPoint(x: screen.visibleFrame.minX + 24, y: screen.visibleFrame.minY + 24)
-        }
         self.screen = screen
-        bubbleFrame = constrained(bubbleFrame, to: screen)
+        bubbleFrame = Self.savedFrame(bubbleFrame.size, on: screen)
         panel.setFrame(preview.fullScreen ? screen.frame : bubbleFrame, display: true)
     }
 
     private func updateStyle() {
-        let frame = preview.fullScreen ? bubbleFrame : panel.frame
         let dimensions = style.shape.dimensions(for: style.size)
-        bubbleFrame = NSRect(x: frame.midX - dimensions.width / 2, y: frame.midY - dimensions.height / 2,
-                             width: dimensions.width, height: dimensions.height)
         if let screen = screen ?? Self.mainScreen ?? panel.screen {
-            bubbleFrame = constrained(bubbleFrame, to: screen)
+            bubbleFrame = Self.savedFrame(dimensions, on: screen)
+        } else {
+            bubbleFrame.size = dimensions
         }
         preview.apply(shape: style.shape, filter: style.filter)
         if !preview.fullScreen { panel.setFrame(bubbleFrame, display: true) }
+    }
+
+    // The position is saved as a fraction of the screen's free area, so it stays in the same corner after
+    // a size change, a resolution change or a move to another screen. The default is bottom-right.
+    private static func savedFrame(_ size: NSSize, on screen: NSScreen) -> NSRect {
+        let area = screen.visibleFrame.insetBy(dx: 24, dy: 24)
+        let defaults = UserDefaults.standard
+        let x = defaults.object(forKey: "bubble.positionX") as? Double ?? 1
+        let y = defaults.object(forKey: "bubble.positionY") as? Double ?? 0
+        return NSRect(x: area.minX + max(area.width - size.width, 0) * x,
+                      y: area.minY + max(area.height - size.height, 0) * y,
+                      width: size.width, height: size.height)
+    }
+
+    private static func savePosition(of frame: NSRect, on screen: NSScreen) {
+        let area = screen.visibleFrame.insetBy(dx: 24, dy: 24)
+        let fraction = { (offset: CGFloat, room: CGFloat) -> Double in
+            room > 0 ? Double(min(max(offset / room, 0), 1)) : 0
+        }
+        UserDefaults.standard.set(fraction(frame.minX - area.minX, area.width - frame.width), forKey: "bubble.positionX")
+        UserDefaults.standard.set(fraction(frame.minY - area.minY, area.height - frame.height), forKey: "bubble.positionY")
     }
 
     private func constrained(_ frame: NSRect, to screen: NSScreen) -> NSRect {

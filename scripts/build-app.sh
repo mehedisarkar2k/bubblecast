@@ -11,6 +11,20 @@ cp Resources/Info.plist "$app/Contents/Info.plist"
 mkdir -p "$app/Contents/Resources"
 cp Resources/AppIcon.icns "$app/Contents/Resources/AppIcon.icns"
 
+# Google Drive sign-in needs an OAuth "Desktop app" client. Its JSON (downloaded from Google Cloud) stays
+# out of git in Config/google-client.json and is copied into this build only.
+config="Config/google-client.json"
+plist="$app/Contents/Resources/GoogleClient.plist"
+rm -f "$plist"
+if [ -f "$config" ]; then
+    plutil -create xml1 "$plist"
+    plutil -insert ClientID -string "$(plutil -extract installed.client_id raw "$config")" "$plist"
+    plutil -insert ClientSecret -string "$(plutil -extract installed.client_secret raw "$config")" "$plist"
+    echo "Google Drive: client ID added from $config"
+else
+    echo "Google Drive: no $config; users choose their client file on first Connect."
+fi
+
 # macOS keeps camera, microphone and screen permissions only while the signing identity stays the same,
 # so sign with a real certificate when one exists; ad-hoc signing makes every build look like a new app.
 identity="${BUBBLECAST_SIGN_IDENTITY:-}"

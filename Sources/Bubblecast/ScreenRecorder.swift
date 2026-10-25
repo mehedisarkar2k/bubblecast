@@ -3,13 +3,13 @@ import AVFoundation
 import ScreenCaptureKit
 
 @MainActor
-final class ScreenRecorder: NSObject, SCRecordingOutputDelegate, SCStreamDelegate {
+final class ScreenRecorder: NSObject, SCStreamDelegate {
     var onStarted: (() -> Void)?
     var onFinished: ((URL) -> Void)?
     var onError: ((Error) -> Void)?
     private var stream: SCStream?
-    private var output: SCRecordingOutput?
-    private var file: URL?
+    private var writer: MovieWriter?
+    private var destination: URL?
 
     func start(displayID: CGDirectDisplayID, microphoneID: String?, excluding windowID: CGWindowID) async throws {
         if microphoneID != nil {
@@ -35,7 +35,7 @@ final class ScreenRecorder: NSObject, SCRecordingOutputDelegate, SCStreamDelegat
         let height = Double(display.height) * Double(filter.pointPixelScale)
         let configuration = SCStreamConfiguration()
         let scale = min(1, 1920.0 / max(width, height))
-        // H.264 requires even dimensions; rounding down also avoids upscaling.
+        // The encoder needs even dimensions; rounding down also avoids upscaling.
         configuration.width = max(2, Int(width * scale) / 2 * 2)
         configuration.height = max(2, Int(height * scale) / 2 * 2)
         configuration.minimumFrameInterval = CMTime(value: 1, timescale: 30)
@@ -43,22 +43,28 @@ final class ScreenRecorder: NSObject, SCRecordingOutputDelegate, SCStreamDelegat
         configuration.capturesAudio = false
         configuration.captureMicrophone = microphoneID != nil
         configuration.microphoneCaptureDeviceID = microphoneID
-        let url = try RecordingPaths.nextFile()
-        let recording = SCRecordingOutputConfiguration()
-        recording.outputURL = url
-        recording.videoCodecType = .h264
-        recording.outputFileType = .mp4
-        let output = SCRecordingOutput(configuration: recording, delegate: self)
+        let destination = try RecordingPaths.nextFile()
+        // Record to a local temporary file and move it at the end, so a synced folder (Google Drive)
+        // never uploads a half-written video.
+        let writer = try MovieWriter(url: RecordingPaths.temporaryFile(), width: configuration.width,
+                                     height: configuration.height, withAudio: microphoneID != nil)
+        writer.onFirstFrame = { [weak self] in
+            Task { @MainActor [weak self] in self?.onStarted?() }
+        }
         let stream = SCStream(filter: filter, configuration: configuration, delegate: self)
-        try stream.addRecordingOutput(output)
+        try stream.addStreamOutput(writer, type: .screen, sampleHandlerQueue: writer.queue)
+        if microphoneID != nil {
+            try stream.addStreamOutput(writer, type: .microphone, sampleHandlerQueue: writer.queue)
+        }
         self.stream = stream
-        self.output = output
-        file = url
+        self.writer = writer
+        self.destination = destination
         do {
             try await stream.startCapture()
         } catch {
             // A delegate failure may already have reported this error.
             if self.stream != nil {
+                writer.cancel()
                 clear()
                 throw error
             }
@@ -66,23 +72,29 @@ final class ScreenRecorder: NSObject, SCRecordingOutputDelegate, SCStreamDelegat
     }
 
     func stop() async {
-        guard let stream else { return }
+        guard let stream, let writer, let destination else { return }
         do {
-            // The output delegate signals when the MP4 has actually been finalized.
             try await stream.stopCapture()
+            try await writer.finish()
+            let saved = try RecordingPaths.save(writer.url, to: destination)
+            clear()
+            onFinished?(saved)
         } catch {
-            await fail(error)
+            writer.cancel()
+            clear()
+            onError?(error)
         }
     }
 
     private func clear() {
         stream = nil
-        output = nil
-        file = nil
+        writer = nil
+        destination = nil
     }
 
     private func fail(_ error: Error) async {
         guard let stream else { return }
+        writer?.cancel()
         clear()
         do {
             try await stream.stopCapture()
@@ -91,31 +103,6 @@ final class ScreenRecorder: NSObject, SCRecordingOutputDelegate, SCStreamDelegat
             return
         }
         onError?(error)
-    }
-
-    nonisolated func recordingOutputDidStartRecording(_ recordingOutput: SCRecordingOutput) {
-        let id = ObjectIdentifier(recordingOutput)
-        Task { @MainActor [weak self] in
-            guard let self, let output, ObjectIdentifier(output) == id else { return }
-            onStarted?()
-        }
-    }
-
-    nonisolated func recordingOutputDidFinishRecording(_ recordingOutput: SCRecordingOutput) {
-        let id = ObjectIdentifier(recordingOutput)
-        Task { @MainActor [weak self] in
-            guard let self, let output, ObjectIdentifier(output) == id, let file else { return }
-            clear()
-            onFinished?(file)
-        }
-    }
-
-    nonisolated func recordingOutput(_ recordingOutput: SCRecordingOutput, didFailWithError error: Error) {
-        let id = ObjectIdentifier(recordingOutput)
-        Task { @MainActor [weak self] in
-            guard let self, let output, ObjectIdentifier(output) == id else { return }
-            await fail(error)
-        }
     }
 
     nonisolated func stream(_ stream: SCStream, didStopWithError error: Error) {
