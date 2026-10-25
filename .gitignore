@@ -4,3 +4,4 @@ build/
 .swiftpm/
 dist/
 Config/google-client.json
+private/
