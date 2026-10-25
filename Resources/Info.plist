@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key><string>io.github.mehedisarkar2k.bubblecast</string>
+    <key>CFBundleName</key><string>Bubblecast</string>
+    <key>CFBundleDisplayName</key><string>Bubblecast</string>
+    <key>CFBundleExecutable</key><string>Bubblecast</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>1.0.0</string>
+    <key>CFBundleVersion</key><string>1</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
+    <key>LSApplicationCategoryType</key><string>public.app-category.productivity</string>
+    <key>NSHumanReadableCopyright</key><string>© 2026 Mehedi Hasan Sarkar. MIT License.</string>
+    <key>LSMinimumSystemVersion</key><string>15.0</string>
+    <key>NSCameraUseContinuityCameraDeviceType</key><true/>
+    <key>NSCameraUsageDescription</key><string>Show your camera in a bubble or full screen in your local recordings.</string>
+    <key>NSMicrophoneUsageDescription</key><string>Record your voice with your screen to a local MP4 file.</string>
+</dict>
+</plist>

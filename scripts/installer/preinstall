@@ -1,0 +1,4 @@
+#!/bin/bash
+# Quit a running copy so the new version replaces it cleanly.
+pkill -x Bubblecast || true
+exit 0

@@ -1,0 +1,7 @@
+#!/bin/bash
+# The installer runs as root; open the app as the person at the screen so its setup window appears.
+user="$(stat -f %Su /dev/console)"
+if [ -n "$user" ] && [ "$user" != "root" ]; then
+    launchctl asuser "$(id -u "$user")" sudo -u "$user" /usr/bin/open "/Applications/Bubblecast.app" || true
+fi
+exit 0
