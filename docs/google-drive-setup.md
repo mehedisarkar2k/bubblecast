@@ -1,6 +1,6 @@
-# Google Drive setup (one time, for whoever builds Bubblecast)
+# Google Drive setup (only if you build Bubblecast yourself)
 
-Google requires every app that uses Drive to have its own OAuth client. Users of your build then only click **Connect Google Drive** and **Allow**.
+Official releases already include a Google client: users just click **Connect Google Drive** and **Allow**. You need this guide only for your own build, because Google requires every app that uses Drive to have its own OAuth client, and the client file is never stored in this repository.
 
 1. Open <https://console.cloud.google.com/> and sign in.
 2. Create a project: project menu → **New project** → name it `Bubblecast` → **Create**, then select it.

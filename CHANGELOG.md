@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2 — 2026-10-25
+
+- Google Drive works out of the box: official releases include Bubblecast's own Google client, so **Connect Google Drive → Allow** is all a user does. No client file to pick or share.
+
 ## 1.2.1 — 2026-10-25
 
 - The Google client file picker opens on the Desktop.

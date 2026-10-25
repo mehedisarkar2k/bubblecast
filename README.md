@@ -70,7 +70,7 @@ Open the Library from the film icon on the bar, the menu-bar icon → **Library�
 
 **Connect Google Drive** (toolbar) opens Google sign-in in your browser once. Bubblecast asks only for the `drive.file` permission, so it can see only the files it creates, in a **Bubblecast** folder. The sign-in is stored in the macOS Keychain; **Disconnect** removes it. Uploads go to Drive; the local file always stays.
 
-The first **Connect** asks for your Google OAuth client file (a "Desktop app" JSON from Google Cloud) and keeps it in the Keychain. Public releases contain no Google client; see [docs/google-drive-setup.md](docs/google-drive-setup.md) to create one.
+Official releases include Bubblecast's own Google client, so **Connect → Allow** is all you do. The client file is never in this repository; if you build Bubblecast yourself without one, the first **Connect** asks for your own client file (see [docs/google-drive-setup.md](docs/google-drive-setup.md)).
 
 ## Uninstall
 
