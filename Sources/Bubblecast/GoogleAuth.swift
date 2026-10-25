@@ -78,6 +78,8 @@ final class GoogleAuth: ObservableObject {
         panel.message = "Pick the OAuth \"Desktop app\" JSON you downloaded from Google Cloud. Bubblecast keeps it in your Keychain; you can delete the file afterwards."
         panel.allowedContentTypes = [.json]
         panel.prompt = "Use This File"
+        // Google downloads the file to Downloads and people often move it to the Desktop.
+        panel.directoryURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
         NSApp.activate()
         guard panel.runModal() == .OK, let url = panel.url else { return }
         let data = try Data(contentsOf: url)

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 — 2026-10-25
+
+- The Google client file picker opens on the Desktop.
+
 ## 1.2.0 — 2026-10-25
 
 - **Library window** (bar → film icon, menu-bar icon → Library…, and after every recording): thumbnails, length, size, search, sort, filters (Today, This Week, On Drive, Shared), play, rename, show in Finder, move to Trash, multi-select, storage summary.
